@@ -1,0 +1,16 @@
+[package]
+name = "mpmc-map"
+version = "0.1.0"
+authors = ["Protryon <max.bruce12@gmail.com>"]
+edition = "2018"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/Protryon/mpmc-map"
+description = "Mpmc async map implementation for highly concurrent low-write access"
+keywords = [ "mpmc", "map", "async" ]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tokio = { version = "1", features=["sync", "rt"] }
+im = "15.0"
+arc-swap = "1.2"
