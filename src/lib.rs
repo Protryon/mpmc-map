@@ -70,9 +70,19 @@ impl<K: Send + Sync + Hash + Clone + Eq + 'static, V: Send + Clone + Sync + 'sta
         while let Some(mutation) = receiver.recv().await {
             match mutation.op {
                 MpmcMapMutationOp::Insert(key, value) => {
-                    let new_map = map.load().update(key, value);
-                    map.store(Arc::new(new_map));
-                    mutation.response.send(MpmcMapMutationResponse::None).ok();
+                    let map_load = map.load();
+                    if let Some((old_value, prior)) = map_load.extract(&key) {
+                        let new_map = prior.update(key, value);
+                        map.store(Arc::new(new_map));
+                        mutation
+                            .response
+                            .send(MpmcMapMutationResponse::Value(old_value))
+                            .ok();
+                    } else {
+                        let new_map = map_load.update(key, value);
+                        map.store(Arc::new(new_map));
+                        mutation.response.send(MpmcMapMutationResponse::None).ok();
+                    }
                 }
                 MpmcMapMutationOp::Remove(key) => {
                     if let Some((old_value, new_map)) = map.load().extract(&key) {
@@ -89,7 +99,7 @@ impl<K: Send + Sync + Hash + Clone + Eq + 'static, V: Send + Clone + Sync + 'sta
         }
     }
 
-    pub async fn insert(&self, key: K, value: V) {
+    pub async fn insert(&self, key: K, value: V) -> Option<V> {
         let (response, receiver) = oneshot::channel::<MpmcMapMutationResponse<V>>();
         self.sender
             .send(MpmcMapMutation {
@@ -99,9 +109,13 @@ impl<K: Send + Sync + Hash + Clone + Eq + 'static, V: Send + Clone + Sync + 'sta
             .await
             .ok()
             .expect("failed to send insert mutation");
-        receiver
+        match receiver
             .await
-            .expect("failed to receive mpmc map mutation response");
+            .expect("failed to receive mpmc map mutation response")
+        {
+            MpmcMapMutationResponse::None => None,
+            MpmcMapMutationResponse::Value(v) => Some(v),
+        }
     }
 
     pub async fn remove(&self, key: K) -> Option<V> {
@@ -116,10 +130,11 @@ impl<K: Send + Sync + Hash + Clone + Eq + 'static, V: Send + Clone + Sync + 'sta
             .expect("failed to send insert mutation");
         match receiver
             .await
-            .expect("failed to receive mpmc map mutation response") {
-                MpmcMapMutationResponse::None => None,
-                MpmcMapMutationResponse::Value(v) => Some(v),
-            }
+            .expect("failed to receive mpmc map mutation response")
+        {
+            MpmcMapMutationResponse::None => None,
+            MpmcMapMutationResponse::Value(v) => Some(v),
+        }
     }
 
     pub fn get<BK: ?Sized>(&self, key: &BK) -> Option<V>
