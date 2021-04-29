@@ -32,6 +32,14 @@ pub struct MpmcMap<K: Send + Sync + Hash + Clone + Eq + 'static, V: Send + Clone
     sender: mpsc::Sender<MpmcMapMutation<K, V>>,
 }
 
+impl<K: Send + Sync + Hash + Clone + Eq + 'static, V: Send + Clone + Sync + 'static> Default
+    for MpmcMap<K, V>
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<K: Send + Sync + Hash + Clone + Eq + 'static, V: Send + Clone + Sync + 'static> Clone
     for MpmcMap<K, V>
 {
