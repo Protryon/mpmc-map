@@ -26,6 +26,7 @@ struct MpmcMapMutation<
     response: oneshot::Sender<MpmcMapMutationResponse<V>>,
 }
 
+#[derive(Debug)]
 pub struct MpmcMap<K: Send + Sync + Hash + Clone + Eq + 'static, V: Send + Clone + Sync + 'static> {
     inner: Arc<ArcSwap<HashMap<K, V>>>,
     sender: mpsc::Sender<MpmcMapMutation<K, V>>,
