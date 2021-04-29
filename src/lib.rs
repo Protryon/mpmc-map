@@ -134,4 +134,8 @@ impl<K: Send + Sync + Hash + Clone + Eq + 'static, V: Send + Clone + Sync + 'sta
     pub fn inner(&self) -> Guard<Arc<HashMap<K, V>>> {
         self.inner.load()
     }
+
+    pub fn reset(&self, value: Arc<HashMap<K, V>>) {
+        self.inner.store(value);
+    }
 }
