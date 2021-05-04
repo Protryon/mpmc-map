@@ -37,7 +37,7 @@ dependencies = [
 
 [[package]]
 name = "mpmc-map"
-version = "0.1.6"
+version = "0.2.0"
 dependencies = [
  "arc-swap",
  "im",
